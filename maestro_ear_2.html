@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MAESTRO — Piano Ear Trainer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#150F0C;
+    --panel:#221812;
+    --panel-2:#2C1F18;
+    --brass:#C9A227;
+    --brass-bright:#E9C85B;
+    --curtain:#7A2331;
+    --curtain-bright:#A83348;
+    --sage:#7FA37A;
+    --text:#F1E7D8;
+    --text-dim:#B6A78E;
+    --hairline:#3A2C22;
+    --radius:2px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: radial-gradient(ellipse at 50% -10%, #2A1D16 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    padding:32px 16px 60px;
+    min-height:100vh;
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+
+  header{
+    text-align:center;
+    padding-bottom:22px;
+    margin-bottom:26px;
+    border-bottom:1px solid var(--hairline);
+    position:relative;
+  }
+  .eyebrow{
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:.28em;
+    color:var(--brass);
+    text-transform:uppercase;
+  }
+  h1{
+    font-family:'Spectral',serif;
+    font-weight:600;
+    font-size:40px;
+    margin:6px 0 4px;
+    letter-spacing:.01em;
+  }
+  h1 em{font-style:italic;font-weight:400;color:var(--brass-bright);}
+  .sub{
+    font-size:13px;
+    color:var(--text-dim);
+    font-style:italic;
+    font-family:'Spectral',serif;
+  }
+  .how-to-btn{
+    position:absolute;
+    top:0; right:0;
+    font-family:'Space Mono',monospace;
+    font-size:10px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    background:transparent;
+    border:1px solid var(--hairline);
+    border-radius:var(--radius);
+    padding:8px 12px;
+    cursor:pointer;
+  }
+  .how-to-btn:hover{border-color:var(--brass);color:var(--brass-bright);}
+
+  .scorerow{
+    display:flex;
+    justify-content:center;
+    gap:38px;
+    margin-bottom:28px;
+    font-family:'Space Mono',monospace;
+  }
+  .stat{text-align:center;}
+  .stat .n{font-size:26px;color:var(--brass-bright);}
+  .stat .l{font-size:10px;letter-spacing:.18em;color:var(--text-dim);text-transform:uppercase;margin-top:2px;}
+
+  .stage{
+    background:linear-gradient(180deg,var(--panel-2),var(--panel));
+    border:1px solid var(--hairline);
+    border-radius:var(--radius);
+    padding:34px 28px 28px;
+    position:relative;
+    overflow:hidden;
+  }
+  .stage::before{
+    content:"";
+    position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,transparent,var(--brass),transparent);
+    opacity:.7;
+  }
+
+  .metronome-box{display:flex;justify-content:center;margin-bottom:10px;}
+  #metroSvg{width:120px;height:130px;}
+  .time-label{
+    text-align:center;
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    color:var(--text-dim);
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    margin-bottom:22px;
+    min-height:14px;
+  }
+
+  .round-label{
+    text-align:center;
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:.2em;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    margin-bottom:18px;
+  }
+
+  .btnrow{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:6px;}
+  button{
+    font-family:'Space Mono',monospace;
+    font-size:13px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    padding:14px 26px;
+    border-radius:var(--radius);
+    border:1px solid var(--brass);
+    background:transparent;
+    color:var(--brass-bright);
+    cursor:pointer;
+    transition:background .15s,color .15s,transform .1s,border-color .15s;
+  }
+  button:hover:not(:disabled){background:var(--brass);color:#1B140E;}
+  button:active:not(:disabled){transform:scale(.97);}
+  button:disabled{opacity:.35;cursor:not-allowed;}
+  button.primary{background:var(--brass);color:#1B140E;}
+  button.primary:hover:not(:disabled){background:var(--brass-bright);}
+  button.danger{border-color:var(--curtain-bright);color:var(--curtain-bright);}
+  button.danger:hover:not(:disabled){background:var(--curtain-bright);color:#1B140E;}
+  button.ghost{border-color:var(--hairline);color:var(--text-dim);}
+  button.ghost:hover:not(:disabled){background:var(--hairline);color:var(--text);}
+  button.small{padding:9px 16px;font-size:11px;}
+
+  /* ---------- Answer choices ---------- */
+  .choices{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+    margin-top:4px;
+  }
+  .choice-btn{
+    font-family:'Spectral',serif;
+    font-size:15px;
+    text-transform:none;
+    letter-spacing:0;
+    text-align:left;
+    padding:14px 16px;
+    border:1px solid var(--hairline);
+    background:rgba(255,255,255,0.02);
+    color:var(--text);
+    border-radius:var(--radius);
+    cursor:pointer;
+    transition:border-color .15s,background .15s;
+  }
+  .choice-btn:hover:not(:disabled){border-color:var(--brass);background:rgba(201,162,39,0.08);}
+  .choice-btn:disabled{cursor:default;}
+  .choice-btn.choice-correct{border-color:var(--sage);background:rgba(127,163,122,0.15);color:var(--sage);}
+  .choice-btn.choice-wrong{border-color:var(--curtain-bright);background:rgba(168,51,72,0.15);color:var(--curtain-bright);}
+
+  /* ---------- Verdict ---------- */
+  .verdict{
+    margin-top:20px;
+    padding:18px 20px;
+    border-radius:var(--radius);
+    display:none;
+  }
+  .verdict.show{display:block;}
+  .verdict.correct{background:rgba(127,163,122,.12);border:1px solid var(--sage);}
+  .verdict.wrong{background:rgba(168,51,72,.12);border:1px solid var(--curtain-bright);}
+  .verdict .vlabel{
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  .verdict.correct .vlabel{color:var(--sage);}
+  .verdict.wrong .vlabel{color:var(--curtain-bright);}
+  .verdict .answer{
+    font-family:'Spectral',serif;
+    font-size:20px;
+  }
+  .verdict .answer .composer{color:var(--brass-bright);font-weight:600;}
+  .verdict .points{
+    font-family:'Space Mono',monospace;
+    font-size:13px;
+    color:var(--text-dim);
+    margin-top:8px;
+  }
+
+  /* ---------- How to play overlay ---------- */
+  .howto{
+    display:none;
+  }
+  .howto.show{display:block;}
+  .howto h2{
+    font-family:'Spectral',serif;
+    font-size:24px;
+    margin:0 0 4px;
+  }
+  .howto p, .howto li{
+    font-size:14px;
+    line-height:1.7;
+    color:var(--text-dim);
+  }
+  .howto strong{color:var(--brass-bright);font-weight:600;}
+  .howto ol{padding-left:20px;margin:14px 0;}
+  .howto li{margin-bottom:8px;}
+  .tier-table{
+    margin:16px 0;
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+  }
+  .tier-table div{
+    display:flex; justify-content:space-between;
+    padding:6px 0;
+    border-bottom:1px solid var(--hairline);
+    color:var(--text-dim);
+  }
+  .tier-table span:first-child{color:var(--brass-bright);}
+
+  /* ---------- Summary ---------- */
+  .tier-badge{
+    text-align:center;
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--curtain-bright);
+    margin-top:2px;
+  }
+
+  footer{
+    margin-top:34px;
+    text-align:center;
+    font-size:11px;
+    color:var(--text-dim);
+    line-height:1.7;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <button class="how-to-btn" id="howToBtn">How to Play</button>
+    <div class="eyebrow">A Program of Musical Recognition</div>
+    <h1>MAESTRO <em>Ear Trainer</em></h1>
+    <div class="sub">Piano solo only — pick the composer and work before time runs out</div>
+  </header>
+
+  <div class="scorerow">
+    <div class="stat"><div class="n" id="scoreN">0</div><div class="l">Score</div></div>
+    <div class="stat"><div class="n" id="streakN">0</div><div class="l">Streak</div></div>
+    <div class="stat"><div class="n" id="roundN">0 / 0</div><div class="l">Round</div></div>
+  </div>
+
+  <!-- How to play -->
+  <div class="stage howto" id="howtoPanel">
+    <h2>How to Play</h2>
+    <p>Each round plays a short fragment (max 5 seconds) of a real piano recording. As soon as it starts, four possible answers appear.</p>
+    <ol>
+      <li>Press <strong>Play Fragment</strong> to hear the clip.</li>
+      <li>Pick the composer &amp; work from the four choices — the sooner you're right, the more it's worth. The metronome case fills up as your time runs out.</li>
+      <li>No answer in time, or you'd rather move on? Hit <strong>Skip</strong> — it just counts as wrong and advances.</li>
+      <li>The game runs for 5 rounds. Your final score depends on both accuracy and speed.</li>
+    </ol>
+    <p>At the end you're ranked into a tier:</p>
+    <div class="tier-table" id="tierTable"></div>
+    <div class="btnrow"><button class="primary" id="closeHowToBtn">Back to Game</button></div>
+  </div>
+
+  <div class="stage" id="mainStage">
+    <div class="metronome-box">
+      <svg id="metroSvg" viewBox="0 0 120 130">
+        <defs>
+          <clipPath id="caseClip"><path d="M24 118 L46 26 L74 26 L96 118 Z"/></clipPath>
+        </defs>
+        <path d="M24 118 L46 26 L74 26 L96 118 Z" fill="#3A2C22" stroke="#5A4738" stroke-width="1"/>
+        <rect id="fillRect" x="24" y="118" width="72" height="0" fill="#7FA37A" opacity="0.55" clip-path="url(#caseClip)"/>
+        <rect x="46" y="20" width="28" height="8" rx="1.5" fill="#2C201A" stroke="#5A4738" stroke-width="1"/>
+        <g class="pendulum" id="pendulum">
+          <line x1="60" y1="118" x2="60" y2="42" stroke="#C9A227" stroke-width="2.5"/>
+          <circle cx="60" cy="66" r="6" fill="#E9C85B" id="pendWeight"/>
+          <circle cx="60" cy="42" r="3" fill="#E9C85B"/>
+        </g>
+        <circle cx="60" cy="118" r="4" fill="#E9C85B"/>
+      </svg>
+    </div>
+    <div class="time-label" id="timeLabel">Ready when you are</div>
+
+    <div class="round-label" id="stageLabel">Press play to hear a fragment</div>
+
+    <div class="btnrow" id="mainButtons">
+      <button class="primary" id="playBtn">▶ Play Fragment</button>
+    </div>
+
+    <div class="choices" id="choicesBox" style="display:none;"></div>
+
+    <div class="btnrow" id="skipRow" style="display:none;margin-top:14px;">
+      <button class="ghost small" id="skipBtn">Skip →</button>
+    </div>
+
+    <div class="verdict" id="verdict">
+      <div class="vlabel" id="vlabel">—</div>
+      <div class="answer" id="vanswer">—</div>
+      <div class="points" id="vpoints">—</div>
+      <div class="btnrow" style="margin-top:16px;">
+        <button class="primary" id="nextBtn">Next Fragment →</button>
+      </div>
+    </div>
+
+    <audio id="player" preload="none"></audio>
+  </div>
+
+  <div class="stage" id="summaryPanel" style="display:none;">
+    <div class="eyebrow" style="text-align:center;">Program Complete</div>
+    <h1 style="font-size:28px;text-align:center;margin:6px 0 0;">Final Score: <em id="finalScore">0</em></h1>
+    <div class="tier-badge" id="tierBadge">—</div>
+    <div class="scorerow" style="margin:22px 0;">
+      <div class="stat"><div class="n" id="finalCorrect">0/5</div><div class="l">Correct</div></div>
+      <div class="stat"><div class="n" id="finalAvgTime">0.0s</div><div class="l">Avg. Time</div></div>
+    </div>
+    <div class="btnrow">
+      <button class="primary" id="playAgainBtn">Play Again</button>
+    </div>
+  </div>
+
+  <footer>
+    Recordings performed by various artists, sourced from Wikimedia Commons and Musopen under public domain / Creative Commons licenses.
+  </footer>
+</div>
+
+<script>
+/* ---------------- Deck ---------------- */
+function cf(name){ return "https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(name); }
+
+const DECK = [
+  // — Beethoven —
+  { composer:"Ludwig van Beethoven", title:"Für Elise",
+    url: cf("Fur-elise-beethoven-216331.ogg") },
+  { composer:"Ludwig van Beethoven", title:"Piano Sonata No. 14 \"Moonlight\" — I. Adagio sostenuto",
+    url: cf("Ludwig van Beethoven - sonata no. 14 in c sharp minor 'moonlight', op. 27 no. 2 - i. adagio sostenuto.ogg") },
+  { composer:"Ludwig van Beethoven", title:"Piano Sonata No. 14 \"Moonlight\" — III. Presto agitato",
+    url: cf("Moonlight Sonata Presto.ogg") },
+  { composer:"Ludwig van Beethoven", title:"Piano Sonata No. 8 \"Pathétique\" — I. Grave – Allegro",
+    url: cf("Beethoven, Sonata No. 8 in C Minor Pathetique, Op. 13 - I. Grave - Allegro di molto e con brio.ogg") },
+  { composer:"Ludwig van Beethoven", title:"Piano Sonata No. 8 \"Pathétique\" — II. Adagio cantabile",
+    url: cf("Beethoven, Sonata No. 8 in C Minor Pathetique, Op. 13 - II. Adagio cantabile.ogg") },
+  { composer:"Ludwig van Beethoven", title:"Piano Sonata No. 8 \"Pathétique\" — III. Rondo",
+    url: cf("Beethoven, Sonata No. 8 in C Minor Pathetique, Op. 13 - III. Rondo - Allegro.ogg") },
+  { composer:"Ludwig van Beethoven", title:"Minuet in G",
+    url: cf("Minuet in G (Beethoven), piano.ogg") },
+  { composer:"Ludwig van Beethoven", title:"Piano Sonata No. 29 \"Hammerklavier\" — III. Adagio sostenuto",
+    url: cf("Beethoven, Piano Sonata No. 29 in B-flat Major, Op. 106 Hammerklavier - III. Adagio sostenuto.ogg") },
+  { composer:"Ludwig van Beethoven", title:"Piano Sonata No. 32, Op. 111 — Main theme",
+    url: cf("Beethowen-sonata32-musopen-maintheme.ogg") },
+
+  // — Mozart —
+  { composer:"Wolfgang Amadeus Mozart", title:"Piano Sonata No. 16 \"Sonata facile\" — I. Allegro",
+    url: cf("Wolfgang Amadeus Mozart - sonata no. 16 in c major, k.545 'sonata facile' - i. allegro.ogg") },
+  { composer:"Wolfgang Amadeus Mozart", title:"Piano Sonata No. 13, K. 333 — I. Allegro",
+    url: cf("Wolfgang Amadeus Mozart - sonata no. 13 in b flat major, k.333 - i. allegro.ogg") },
+  { composer:"Wolfgang Amadeus Mozart", title:"Piano Sonata No. 13, K. 333 — II. Andante cantabile",
+    url: cf("Wolfgang Amadeus Mozart - sonata no. 13 in b flat major, k.333 - ii. andante cantabile.ogg") },
+  { composer:"Wolfgang Amadeus Mozart", title:"Piano Sonata No. 14, K. 457 — I. Allegro",
+    url: cf("W. A. Mozart - Sonata No. 14 K 457 - I. Allegro.ogg") },
+  { composer:"Wolfgang Amadeus Mozart", title:"Piano Sonata No. 14, K. 457 — II. Adagio",
+    url: cf("W. A. Mozart - Sonata No. 14 K 457 - II. Adagio.ogg") },
+  { composer:"Wolfgang Amadeus Mozart", title:"Piano Sonata No. 14, K. 457 — III. Molto allegro",
+    url: cf("W. A. Mozart - Sonata No. 14 K 457 - III. Molto allegro.ogg") },
+
+  // — Bach (Goldberg Variations, Kimiko Ishizaka, CC0) —
+  { composer:"Johann Sebastian Bach", title:"Goldberg Variations — Aria",
+    url: cf("Kimiko Ishizaka - J.S. Bach- -Open- Goldberg Variations, BWV 988 (Piano) - 01 Aria.mp3") },
+  { composer:"Johann Sebastian Bach", title:"Goldberg Variations — Variatio 12, Canone alla Quarta",
+    url: cf("Kimiko Ishizaka - 13 - Variatio 12 Canone alla Quarta.ogg") },
+  { composer:"Johann Sebastian Bach", title:"Goldberg Variations — Variatio 13",
+    url: cf("Kimiko Ishizaka - 14 - Variatio 13 a 2 Clav.ogg") },
+  { composer:"Johann Sebastian Bach", title:"Goldberg Variations — Variatio 15, Canone alla Quinta",
+    url: cf("Kimiko Ishizaka - 16 - Variatio 15 a 1 Clav Canone alla Quinta.ogg") },
+  { composer:"Johann Sebastian Bach", title:"Goldberg Variations — Variatio 17",
+    url: cf("Kimiko Ishizaka - 18 - Variatio 17 a 2 Clav.ogg") },
+  { composer:"Johann Sebastian Bach", title:"Goldberg Variations — Variatio 18, Canone alla Sexta",
+    url: cf("Kimiko Ishizaka - 19 - Variatio 18 a 1 Clav Canone alla Sexta.ogg") },
+  { composer:"Johann Sebastian Bach", title:"Goldberg Variations — Variatio 19",
+    url: cf("Kimiko Ishizaka - 20 - Variatio 19 a 1 Clav.ogg") },
+  { composer:"Johann Sebastian Bach", title:"Goldberg Variations — Variatio 21, Canone alla Settima",
+    url: cf("Kimiko Ishizaka - 22 - Variatio 21 Canone alla Settima.ogg") },
+  { composer:"Johann Sebastian Bach", title:"Goldberg Variations — Variatio 22",
+    url: cf("Kimiko Ishizaka - 23 - Variatio 22 a 1 Clav.ogg") },
+
+  // — Chopin —
+  { composer:"Frédéric Chopin", title:"Nocturne in F minor, Op. 55 No. 1",
+    url: cf("Chopin - Nocturne-op-55-no-1.ogg") },
+  { composer:"Frédéric Chopin", title:"Nocturne in C-sharp minor, Op. posth.",
+    url: cf("Chopin, Nocturne in C-sharp minor, Op. Posth.ogg") },
+  { composer:"Frédéric Chopin", title:"Nocturne in F major, Op. 15 No. 1",
+    url: cf("Chopin - Nocturne Op. 15 no. 1 in F major.ogg") },
+  { composer:"Frédéric Chopin", title:"Grande valse brillante in E-flat major, Op. 18",
+    url: cf("Chopin - Grande valse brillante in E flat major, Op. 18.ogg") },
+  { composer:"Frédéric Chopin", title:"Waltz in A minor, B. 150",
+    url: cf("Chopin - Waltz in A minor, B 150.ogg") },
+  { composer:"Frédéric Chopin", title:"Mazurka in A minor, Op. 17 No. 4",
+    url: cf("Chopin - Mazurka in A minor, op 17, no. 4.oga") },
+  { composer:"Frédéric Chopin", title:"Mazurka in A minor, Op. 7 No. 2",
+    url: cf("Chopin - Mazurka in A minor, Op. 7 no. 2.ogg") },
+  { composer:"Frédéric Chopin", title:"Mazurka in A-flat major, Op. 17 No. 3",
+    url: cf("Chopin - Mazurka in A-flat major, op 17, no. 3.ogg") },
+  { composer:"Frédéric Chopin", title:"Mazurka in B-flat major, B. 73",
+    url: cf("Chopin - Mazurka in b-flat major b.73.ogg") },
+  { composer:"Frédéric Chopin", title:"Mazurka in B-flat major, Op. 17 No. 1",
+    url: cf("Chopin - Mazurka in B-flat major, op 17, no. 1.ogg") },
+  { composer:"Frédéric Chopin", title:"Mazurka in B-flat major, Op. 7 No. 1",
+    url: cf("Chopin - Mazurka in B-flat major, Op. 7 no. 1.ogg") },
+  { composer:"Frédéric Chopin", title:"Mazurka in C major, Op. 68 No. 1",
+    url: cf("Chopin - Mazurka in C major, Op. 68 no. 1.ogg") },
+
+  // — Debussy —
+  { composer:"Claude Debussy", title:"Clair de Lune (Suite bergamasque)",
+    url: cf("Clair de lune (Claude Debussy) Suite bergamasque.ogg") },
+  { composer:"Claude Debussy", title:"Sarabande (from Pour le piano)",
+    url: cf("Debussy - Sarabande from Pour le piano.ogg") },
+  { composer:"Claude Debussy", title:"Mazurka",
+    url: cf("Debussy - Mazurka.ogg") },
+
+  // — Schubert —
+  { composer:"Franz Schubert", title:"Piano Sonata in A major, D. 959 — II. Andantino",
+    url: cf("Schubert's Piano Sonata in A major, D.959 - II. Andantino - Paul Pitman.ogg") }
+];
+
+/* ---------------- Timing constants ---------------- */
+const ROUND_LIMIT = 5;
+const AUDIO_MAX_MS = 5000;   // fragment never plays longer than this
+const ANSWER_WINDOW_MS = 12000; // total time-to-answer before auto-timeout
+
+/* ---------------- State ---------------- */
+let deckOrder = [];
+let deckPos = -1;
+let current = null;
+let score = 0, streak = 0;
+let results = [];
+let fragmentStartTime = null;
+let fillRAF = null;
+let roundLocked = false;
+let currentEntry = null;
+
+const els = {
+  scoreN: document.getElementById('scoreN'),
+  streakN: document.getElementById('streakN'),
+  roundN: document.getElementById('roundN'),
+  playBtn: document.getElementById('playBtn'),
+  mainButtons: document.getElementById('mainButtons'),
+  stageLabel: document.getElementById('stageLabel'),
+  timeLabel: document.getElementById('timeLabel'),
+  choicesBox: document.getElementById('choicesBox'),
+  skipRow: document.getElementById('skipRow'),
+  skipBtn: document.getElementById('skipBtn'),
+  verdict: document.getElementById('verdict'),
+  vlabel: document.getElementById('vlabel'),
+  vanswer: document.getElementById('vanswer'),
+  vpoints: document.getElementById('vpoints'),
+  nextBtn: document.getElementById('nextBtn'),
+  player: document.getElementById('player'),
+  pendulum: document.getElementById('pendulum'),
+  fillRect: document.getElementById('fillRect'),
+  stage: document.getElementById('mainStage'),
+  summaryPanel: document.getElementById('summaryPanel'),
+  finalScore: document.getElementById('finalScore'),
+  finalCorrect: document.getElementById('finalCorrect'),
+  finalAvgTime: document.getElementById('finalAvgTime'),
+  tierBadge: document.getElementById('tierBadge'),
+  playAgainBtn: document.getElementById('playAgainBtn'),
+  howToBtn: document.getElementById('howToBtn'),
+  closeHowToBtn: document.getElementById('closeHowToBtn'),
+  howtoPanel: document.getElementById('howtoPanel'),
+  tierTable: document.getElementById('tierTable')
+};
+
+/* ---------------- Tiers ---------------- */
+const TIERS = [
+  { min:0,    label:"Newbie" },
+  { min:800,  label:"Apprentice" },
+  { min:1800, label:"Expert" },
+  { min:2800, label:"Maestro" },
+  { min:3800, label:"Wizard" }
+];
+function getTier(finalScore){
+  let t = TIERS[0];
+  for(const tier of TIERS){ if(finalScore >= tier.min) t = tier; }
+  return t;
+}
+els.tierTable.innerHTML = TIERS.slice().reverse().map(t =>
+  `<div><span>${t.label}</span><span>${t.min}+ pts</span></div>`
+).join('');
+
+/* ---------------- Helpers ---------------- */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function newDeckOrder(){
+  deckOrder = shuffle(DECK.map((_,i)=>i));
+  deckPos = -1;
+}
+function pieceLabel(t){ return t.title.split(' — ')[0]; }
+function choiceLabel(t){ return `${t.composer} — ${pieceLabel(t)}`; }
+
+function buildChoices(track){
+  const seenLabels = new Set([pieceLabel(track)]);
+  const pool = shuffle(DECK.filter(t => t !== track));
+  const distractors = [];
+  for(const t of pool){
+    const lbl = pieceLabel(t);
+    if(seenLabels.has(lbl)) continue;
+    seenLabels.add(lbl);
+    distractors.push(t);
+    if(distractors.length === 3) break;
+  }
+  return shuffle([track, ...distractors]);
+}
+
+function lerpColor(hexA, hexB, t){
+  const a = hexA.match(/\w\w/g).map(x=>parseInt(x,16));
+  const b = hexB.match(/\w\w/g).map(x=>parseInt(x,16));
+  const c = a.map((v,i)=>Math.round(v + (b[i]-v)*t));
+  return '#' + c.map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
+function pointsFor(elapsedMs){
+  const seconds = elapsedMs/1000;
+  return Math.max(100, Math.round(1000 - seconds*70));
+}
+
+/* ---------------- Metronome pendulum (cosmetic swing) ---------------- */
+let tempoInterval = null;
+function startPendulum(bpm, amplitude){
+  stopPendulum();
+  const amp = amplitude || 12;
+  const periodMs = 60000/bpm;
+  let start = performance.now();
+  function frame(t){
+    const elapsed = (t-start) % periodMs;
+    const phase = (elapsed/periodMs)*Math.PI*2;
+    const angle = Math.sin(phase)*amp;
+    els.pendulum.setAttribute('transform', `rotate(${angle} 60 118)`);
+    tempoInterval = requestAnimationFrame(frame);
+  }
+  tempoInterval = requestAnimationFrame(frame);
+}
+function stopPendulum(){
+  if(tempoInterval) cancelAnimationFrame(tempoInterval);
+  els.pendulum.setAttribute('transform','rotate(0 60 118)');
+}
+startPendulum(46, 7);
+
+/* ---------------- Fill timer (time-remaining indicator) ---------------- */
+const CASE_TOP = 26, CASE_BOTTOM = 118;
+function startFill(){
+  stopFill();
+  const start = performance.now();
+  function tick(t){
+    const elapsed = t - start;
+    const progress = Math.min(1, elapsed / ANSWER_WINDOW_MS);
+    const h = (CASE_BOTTOM - CASE_TOP) * progress;
+    els.fillRect.setAttribute('y', CASE_BOTTOM - h);
+    els.fillRect.setAttribute('height', h);
+    els.fillRect.setAttribute('fill', lerpColor('#7FA37A', '#A83348', progress));
+    if(progress >= 1){
+      handleTimeout();
+      return;
+    }
+    fillRAF = requestAnimationFrame(tick);
+  }
+  fillRAF = requestAnimationFrame(tick);
+}
+function stopFill(){
+  if(fillRAF) cancelAnimationFrame(fillRAF);
+  els.fillRect.setAttribute('height', 0);
+}
+
+/* ---------------- Game flow ---------------- */
+function loadNextTrack(){
+  deckPos++;
+  if(deckPos >= deckOrder.length){
+    newDeckOrder();
+    deckPos = 0;
+  }
+  current = DECK[deckOrder[deckPos]];
+  roundLocked = false;
+  els.roundN.textContent = `${results.length+1} / ${ROUND_LIMIT}`;
+  els.stageLabel.textContent = "Press play to hear a fragment";
+  els.playBtn.style.display = "inline-block";
+  els.choicesBox.style.display = "none";
+  els.choicesBox.innerHTML = "";
+  els.skipRow.style.display = "none";
+  els.verdict.classList.remove('show','correct','wrong');
+  els.timeLabel.textContent = "Ready when you are";
+  stopFill();
+  startPendulum(46, 7);
+}
+
+function pickFragmentStart(){
+  return 8 + Math.random()*32;
+}
+
+els.playBtn.addEventListener('click', attemptPlay);
+
+function attemptPlay(){
+  els.player.src = current.url;
+  const startAt = pickFragmentStart();
+  els.player.currentTime = 0;
+  els.player.play().then(()=>{
+    try{ els.player.currentTime = startAt; }catch(e){}
+  }).catch(()=>{
+    els.stageLabel.textContent = "Playback unavailable — skipping to next fragment…";
+    loadNextTrack();
+    setTimeout(attemptPlay, 300);
+  });
+
+  fragmentStartTime = performance.now();
+  els.stageLabel.textContent = "Fragment playing…";
+  els.playBtn.style.display = "none";
+  els.timeLabel.textContent = "Choose before the case fills up";
+  startPendulum(96, 10);
+  startFill();
+
+  els.choicesBox.style.display = "grid";
+  els.choicesBox.innerHTML = "";
+  const choices = buildChoices(current);
+  choices.forEach(track=>{
+    const btn = document.createElement('button');
+    btn.className = "choice-btn";
+    btn.textContent = choiceLabel(track);
+    btn.addEventListener('click', ()=>onChoiceClick(track, btn, choices));
+    els.choicesBox.appendChild(btn);
+  });
+  els.skipRow.style.display = "flex";
+
+  clearTimeout(window.__audioStopTimer);
+  window.__audioStopTimer = setTimeout(()=>{ els.player.pause(); }, AUDIO_MAX_MS);
+}
+
+function lockChoices(){
+  els.choicesBox.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+  els.skipRow.style.display = "none";
+}
+
+function onChoiceClick(track, btnEl, choices){
+  if(roundLocked) return;
+  roundLocked = true;
+  els.player.pause();
+  clearTimeout(window.__audioStopTimer);
+  stopFill();
+  stopPendulum();
+  els.timeLabel.textContent = "";
+
+  const elapsedMs = performance.now() - fragmentStartTime;
+  const correct = track === current;
+
+  els.choicesBox.querySelectorAll('.choice-btn').forEach((b,i)=>{
+    b.disabled = true;
+    if(choices[i] === current) b.classList.add('choice-correct');
+  });
+  if(!correct) btnEl.classList.add('choice-wrong');
+  els.skipRow.style.display = "none";
+
+  finalizeRound(correct, elapsedMs, null);
+}
+
+function handleTimeout(){
+  if(roundLocked) return;
+  roundLocked = true;
+  els.player.pause();
+  clearTimeout(window.__audioStopTimer);
+  stopPendulum();
+  els.timeLabel.textContent = "";
+  lockChoices();
+  els.choicesBox.querySelectorAll('.choice-btn').forEach(b=>{
+    if(b.textContent === choiceLabel(current)) b.classList.add('choice-correct');
+  });
+  finalizeRound(false, ANSWER_WINDOW_MS, "Time's up");
+}
+
+els.skipBtn.addEventListener('click', ()=>{
+  if(roundLocked) return;
+  roundLocked = true;
+  els.player.pause();
+  clearTimeout(window.__audioStopTimer);
+  stopFill();
+  stopPendulum();
+  els.timeLabel.textContent = "";
+  const elapsedMs = performance.now() - fragmentStartTime;
+  lockChoices();
+  finalizeRound(false, elapsedMs, "Skipped");
+});
+
+function finalizeRound(correct, elapsedMs, forcedLabel){
+  let pts = 0;
+  if(correct){
+    pts = pointsFor(elapsedMs);
+    score += pts;
+    streak += 1;
+    els.verdict.classList.add('show','correct');
+    els.vlabel.textContent = "Correct";
+  } else {
+    streak = 0;
+    els.verdict.classList.add('show','wrong');
+    els.vlabel.textContent = forcedLabel || "Not quite";
+  }
+  els.vanswer.innerHTML = `<span class="composer">${current.composer}</span><br>${current.title}`;
+  els.vpoints.textContent = correct
+    ? `+${pts} points · answered in ${(elapsedMs/1000).toFixed(1)}s`
+    : `no points this round`;
+
+  els.scoreN.textContent = score;
+  els.streakN.textContent = streak;
+
+  currentEntry = {
+    correct, elapsedMs, points: pts,
+    composer: current.composer, title: current.title
+  };
+}
+
+els.nextBtn.addEventListener('click', ()=>{
+  els.player.pause();
+  if(currentEntry){
+    commitRoundAndAdvance(currentEntry);
+    currentEntry = null;
+  } else {
+    loadNextTrack();
+  }
+});
+
+function commitRoundAndAdvance(entry){
+  results.push(entry);
+  if(results.length >= ROUND_LIMIT){
+    showSummary();
+  } else {
+    loadNextTrack();
+  }
+}
+
+function showSummary(){
+  els.stage.style.display = "none";
+  els.summaryPanel.style.display = "block";
+
+  const correctCount = results.filter(r=>r.correct).length;
+  const totalMs = results.reduce((s,r)=>s+(r.elapsedMs||0),0);
+  const avgS = (totalMs / results.length / 1000);
+  const tier = getTier(score);
+
+  els.finalScore.textContent = score;
+  els.tierBadge.textContent = tier.label;
+  els.finalCorrect.textContent = `${correctCount}/${ROUND_LIMIT}`;
+  els.finalAvgTime.textContent = `${avgS.toFixed(1)}s`;
+}
+
+function resetGame(){
+  score = 0; streak = 0; results = [];
+  els.scoreN.textContent = 0;
+  els.streakN.textContent = 0;
+  els.summaryPanel.style.display = "none";
+  els.stage.style.display = "block";
+  newDeckOrder();
+  loadNextTrack();
+}
+els.playAgainBtn.addEventListener('click', resetGame);
+
+/* ---------------- How to Play ---------------- */
+let cameFromSummary = false;
+els.howToBtn.addEventListener('click', ()=>{
+  cameFromSummary = els.summaryPanel.style.display !== "none";
+  els.stage.style.display = "none";
+  els.summaryPanel.style.display = "none";
+  els.howtoPanel.classList.add('show');
+});
+els.closeHowToBtn.addEventListener('click', ()=>{
+  els.howtoPanel.classList.remove('show');
+  if(cameFromSummary){
+    els.summaryPanel.style.display = "block";
+  } else {
+    els.stage.style.display = "block";
+  }
+});
+
+/* ---------------- Init ---------------- */
+newDeckOrder();
+loadNextTrack();
+</script>
+</body>
+</html>
