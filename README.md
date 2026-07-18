@@ -3,7 +3,7 @@
 
 A browser-based, Hitster-style ear-training game: a short piano fragment plays, and you race the clock to pick the right composer and piece from four choices. Single self-contained HTML file, no build step, no backend.
 
-**Play it live:** `https://<your-username>.github.io/<repo-name>/`
+**Play it live:** `https://leeghart.github.io/maestro/`
 *(update this link once GitHub Pages is enabled — see below)*
 
 ## How to play
