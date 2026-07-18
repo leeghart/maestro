@@ -1,0 +1,15 @@
+{
+  "name": "Maestro — Piano Ear Trainer",
+  "short_name": "Maestro",
+  "description": "A Hitster-style ear-training game: hear a piano fragment, pick the composer and work before time runs out.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#150F0C",
+  "theme_color": "#150F0C",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
