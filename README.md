@@ -1,55 +1,61 @@
-# Maestro Ear Trainer — native SwiftUI version
+# 🎹 Maestro — Piano Ear Trainer
 
-A native iOS port of the Maestro web game: same mechanics (era picker, 5-second
-streamed piano fragments, 12-second answer window with the fill-up metronome,
-3 choices, 5 rounds, score tiers, 3-second auto-advance), same 93-track deck.
+A browser-based, Hitster-style ear-training game: a short piano fragment plays, and you race the clock to pick the right composer and piece from three choices. Two files, no build step, no backend.
+
+**Play it live:** `https://<your-username>.github.io/<repo-name>/`
+*(update this link once GitHub Pages is enabled — see below)*
 
 ## Files
 
-| File | Contents |
-|---|---|
-| `MaestroApp.swift` | App entry point + all SwiftUI views (root, era picker, game, summary, how-to) and the theme |
-| `Models.swift` | `Era`, `Track` (incl. Commons streaming-URL resolution), `Tier`, `RoundResult` |
-| `Deck.swift` | The full 93-track repertoire |
-| `GameViewModel.swift` | The whole game state machine: playback, timers, scoring, round flow |
-| `MetronomeView.swift` | The signature metronome (Canvas-drawn case, fill timer, swinging pendulum) |
+- **`index.html`** — the showcase/landing page. This is what visitors see first: a live embedded preview of the game, how-to-play, the repertoire by era, score tiers, and install instructions.
+- **`game.html`** — the actual game. Linked from every "Play Now" button on the showcase page, and also the direct URL people should bookmark or add to their home screen.
+- **`manifest.json`** + **`icons/`** — PWA install support (see below).
 
-## Building it (on your Mac)
+## How to play
 
-1. Open **Xcode** (15 or newer) → **File → New → Project…** → **iOS → App**.
-   - Product Name: `Maestro` (or anything)
-   - Interface: **SwiftUI**, Language: **Swift**
-   - Minimum deployment target: **iOS 16** or later (the code uses `Task.sleep(for:)` and `NavigationStack`).
-2. In the new project, **delete** the generated `ContentView.swift` and the generated `<YourApp>App.swift` (Move to Trash).
-3. Drag all five `.swift` files from this folder into the project navigator (check *"Copy items if needed"* and make sure your app target is ticked).
-4. Build & run (⌘R) on the simulator or your iPhone. No third-party dependencies, no configuration needed — audio streams over plain HTTPS, which iOS allows by default.
+1. Pick an era — Baroque, Classical, Romantic, Impressionist, or Mixed.
+2. Press **Play Fragment** to hear a 5-second clip of a real piano recording.
+3. Three possible answers appear immediately. Pick the composer & piece — the faster you're right, the more it's worth.
+4. Watch the metronome case: it fills up (green → red) as your 12-second answer window runs out.
+5. No idea, or want to move on? Hit **Skip** — it counts as wrong and advances.
+6. The game runs for 5 rounds. Your final score depends on both accuracy and speed, and earns you a tier: Newbie → Apprentice → Expert → Maestro → Wizard.
 
-To run on your own iPhone you'll need to be signed into Xcode with any Apple ID
-(free is fine) and select your phone as the run destination; the free
-provisioning profile lasts 7 days per install. For anything longer-lived or for
-TestFlight/App Store, you'd need the paid Apple Developer Program.
+Full rules are also available in-game via the **How to Play** button.
 
-## One important technical note: audio formats
+## Tech
 
-iOS's `AVPlayer` **cannot decode Ogg Vorbis**, and most of the deck's source
-files on Wikimedia Commons are `.ogg`. The app solves this by streaming the
-**MP3 transcodes** Commons generates automatically for every audio upload.
-Those live at deterministic URLs derived from the MD5 hash of the filename —
-see `Track.streamURL` in `Models.swift`. `.mp3` and `.flac` originals play
-natively and use their original URLs.
+- Two self-contained HTML files — HTML, CSS, and vanilla JS, no dependencies, no build tooling.
+- Audio fragments are streamed directly from Wikimedia Commons / Musopen (public domain and Creative Commons piano recordings) via `Special:FilePath` links — no audio files are hosted in this repo.
+- The showcase page (`index.html`) embeds `game.html` live in an iframe — it's not a screenshot or mockup, it's the actual playable game.
+- Fonts loaded from Google Fonts (Spectral, Space Mono, Inter). Everything else runs entirely client-side.
 
-Practical consequence: if you add tracks to `Deck.swift`, just use the exact
-Commons filename (as with the web game) and the URL logic handles the rest —
-but a brand-new Commons upload may take a little while before its MP3
-transcode exists.
+## Installing to your home screen (PWA)
 
-## Parity with the web version
+Open **`game.html`** in **Safari** on iPhone, tap the **Share** icon, then **Add to Home Screen**. You get a real icon and a full-screen launch with no browser chrome — no App Store required. This relies on `manifest.json` and the icon set in `icons/`, both already wired up in `game.html`'s `<head>`.
 
-Deliberately identical: timings (5s audio / 12s window / 3s verdict), scoring
-formula (`1000 − 70·seconds`, floor 100), tier thresholds, choice-building
-rules (distractors from the same era, deduplicated by title), random fragment
-start (8–40s, clamped for short recordings).
+## Updating the track deck
 
-Not carried over (yet): nothing — this is the full game. Natural next steps if
-you want them: haptics on correct/wrong answers, a persistent best-score per
-era via `@AppStorage`, and Game Center leaderboards.
+The full track list lives in the `DECK` array near the top of the `<script>` block in `game.html`. Each entry looks like:
+
+```js
+{ composer:"Frédéric Chopin", era:"Romantic", title:"Nocturne in F minor, Op. 55 No. 1",
+  url: cf("Chopin - Nocturne-op-55-no-1.ogg") }
+```
+
+`cf(name)` builds a Wikimedia Commons `Special:FilePath` URL from the exact file title on Commons — the easiest way to add a track is to find a public-domain/CC piano recording on [Wikimedia Commons](https://commons.wikimedia.org) or [Musopen](https://musopen.org), copy its exact filename, and add a new entry with the right `era` tag (Baroque / Classical / Romantic / Impressionist).
+
+## Deploying updates
+
+If you edit either file locally, you can push changes straight from the command line instead of using the GitHub web uploader:
+
+```bash
+git add index.html game.html manifest.json icons/
+git commit -m "Update deck / showcase"
+git push
+```
+
+GitHub Pages will redeploy automatically within a minute or so.
+
+## License
+
+The code in this repo is free to use and adapt. Audio recordings are not redistributed here — they're streamed live from Wikimedia Commons / Musopen under their original public domain or Creative Commons licenses (see each file's Commons page for exact terms; a few require attribution to the performer).
